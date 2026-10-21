@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CONNECTI V2 - Real Backend</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://js.paystack.co/v1/inline.js"></script>
+</head>
+<body class="bg-white max-w-[500px] mx-auto border-x min-h-screen pb-[60px]">
+<header class="sticky top-0 bg-white z-50 border-b flex justify-between p-3"><h1 class="font-black text-2xl" style="font-family:cursive">CONNECTI V2</h1><div class="flex gap-3"><button onclick="showTab('dm')">✈️</button><button id="authBtn" onclick="login()">Login</button></div></header>
+<div id="expiryBanner" class="hidden bg-blue-500 text-white text-xs p-2 text-center"></div>
+<div id="homeTab"><div id="feed" class="space-y-0"></div></div>
+<div id="reelsTab" class="hidden"><div id="reelsFeed"></div></div>
+<div id="dmTab" class="hidden"><div id="dmList"></div><div id="chatBox" class="hidden flex flex-col h-[70vh]"><div id="chatMessages" class="flex-1 overflow-auto p-3 bg-zinc-50"></div><div class="p-2 flex gap-2"><input id="msgInput" class="flex-1 bg-zinc-100 rounded-full px-4 py-2"><button onclick="sendMessage()" class="text-blue-500 font-bold">Send</button></div></div></div>
+<div id="profileTab" class="hidden p-4">
+<div class="flex gap-4"><img id="profilePic" src="https://i.pravatar.cc/100?img=12" class="w-20 h-20 rounded-full"><div><p id="profileName" class="font-bold">Golden Boy <span id="blueTick" class="hidden text-blue-500">✔️</span></p><p id="blueTickExpiryText" class="text-xs text-blue-500"></p><p class="text-xs">Followers: <span id="followersCount">0</span> • Posts: <span id="postCount">0</span></p></div></div>
+<div class="mt-4 grid grid-cols-3 gap-1" id="profileGrid"></div>
+<div class="mt-6 space-y-2">
+<button onclick="buyBlueTick()" class="w-full bg-blue-500 text-white py-3 rounded-xl font-bold">Blue Tick ✔️ ₦52,500/year ($35/year) - Paystack</button>
+<button onclick="openBoost()" class="w-full border py-3 rounded-xl font-bold">🚀 Boost From ₦1,600</button>
+<button onclick="openCreate()" class="w-full bg-black text-white py-3 rounded-xl">+ Create Post</button>
+</div>
+</div>
+<div id="createModal" class="hidden fixed inset-0 bg-white z-50 p-4"><input type="file" id="postImage" accept="image/*,video/*"><textarea id="caption" placeholder="Caption #hashtag @tag location" class="w-full border p-3 mt-3 h-24"></textarea><input id="locationInput" placeholder="Location" class="w-full border p-2 mt-2"><button onclick="publishPost()" class="bg-blue-500 text-white w-full py-3 mt-3 rounded-xl">Share - Real Firebase</button><button onclick="closeCreate()" class="w-full border py-2 mt-2 rounded-xl">Cancel</button></div>
+<nav class="fixed bottom-0 bg-white border-t flex justify-around py-2.5 w-full max-w-[500px]"><button onclick="showTab('home')">⌂</button><button onclick="showTab('reels')">▶</button><button onclick="openCreate()">+</button><button onclick="showTab('dm')">✈️</button><button onclick="showTab('profile')">👤</button></nav>
+
+<script type="module">
+// FIREBASE V2 - REAL BACKEND
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc, increment, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js';
+import { getDatabase, ref as rtdbRef, push, onChildAdded } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js';
+
+// REPLACE WITH YOUR FIREBASE CONFIG
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "connecti-100.firebaseapp.com",
+  projectId: "connecti-100",
+  storageBucket: "connecti-100.appspot.com",
+  messagingSenderId: "123456",
+  appId: "1:123456:web:abc",
+  databaseURL: "https://connecti-100-default-rtdb.firebaseio.com"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
+const rtdb = getDatabase(app);
+const PAYSTACK_KEY = 'pk_live_16a8e4130e54cdbd8eb5a693ae37a52d874e3ee0';
+
+let currentUser = null;
+let posts = [];
+
+// AUTH
+onAuthStateChanged(auth, (user)=>{
+  currentUser = user;
+  if(user){ document.getElementById('authBtn').innerText = user.uid.slice(0,6); listenPosts(); checkBlueTickExpiry(); }
+  else signInAnonymously(auth);
+});
+window.login = () => signInAnonymously(auth);
+
+// REAL FEED - FIRESTORE REALTIME
+function listenPosts(){
+  const q = query(collection(db,'posts'), orderBy('createdAt','desc'));
+  onSnapshot(q, (snap)=>{
+    posts = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    renderFeed(); renderProfile();
+  });
+}
+window.renderFeed = () => {
+  const feed = document.getElementById('feed');
+  let html = '';
+  posts.forEach((p,i)=>{
+    if(i>0 && i%10===0) html+=`<div class="p-2 bg-yellow-50 text-xs">📢 Sponsored Ad ₦8,000/week ca-app-pub-4813832175831420</div>`;
+    html+=`<div class="border-b pb-2"><div class="p-3 flex gap-2"><img src="${p.avatar||'https://i.pravatar.cc/40?img=12'}" class="w-8 h-8 rounded-full"><b class="text-sm">${p.user} ${p.verified?'✔️':''}</b><span class="text-xs text-zinc-500 ml-auto">${p.location||''}</span></div><img src="${p.image}" class="w-full aspect-square object-cover bg-black"><div class="p-3 flex justify-between"><button onclick="likePost('${p.id}')">${p.likedBy?.includes(currentUser?.uid)?'❤️':'♡'} ${p.likes||0}</button><button onclick="sharePost('${p.id}')">✈️</button>${p.sponsored?'<span class="text-[10px] bg-[#D4AF37] px-2 py-1 rounded-full">Sponsored • Paystack</span>':''}</div><div class="px-3 text-sm"><b>${p.user}</b> ${p.caption}</div></div>`;
+  });
+  feed.innerHTML = html || '<p class="p-10 text-center text-sm">No posts yet - Create first post!</p>';
+};
+
+// REAL PUBLISH - STORAGE + FIRESTORE
+window.publishPost = async () => {
+  const file = document.getElementById('postImage').files[0];
+  const caption = document.getElementById('caption').value;
+  if(!file && !caption) return alert('Add photo or caption');
+  let imageUrl = `https://picsum.photos/500/500?${Date.now()}`;
+  if(file){
+    const storageRef = ref(storage, `posts/${Date.now()}_${file.name}`);
+    await uploadBytes(storageRef, file);
+    imageUrl = await getDownloadURL(storageRef);
+  }
+  await addDoc(collection(db,'posts'),{
+    user: currentUser?.uid.slice(0,8) || 'golden_boy',
+    avatar: 'https://i.pravatar.cc/100?img=12',
+    image: imageUrl,
+    caption,
+    location: document.getElementById('locationInput').value,
+    likes: 0, likedBy: [], verified: localStorage.getItem('blueTick')==='true',
+    sponsored: false, createdAt: Date.now()
+  });
+  closeCreate();
+};
+window.likePost = async (id) => {
+  const postRef = doc(db,'posts',id);
+  await updateDoc(postRef,{ likes: increment(1) });
+};
+
+window.showTab = (t) => {
+  ['home','reels','dm','profile'].forEach(x=>{ const el=document.getElementById(x+'Tab'); if(el) el.classList.add('hidden'); });
+  document.getElementById('homeTab').classList.add('hidden');
+  if(t==='home') document.getElementById('homeTab').classList.remove('hidden'); else document.getElementById(t+'Tab').classList.remove('hidden');
+};
+window.openCreate = () => document.getElementById('createModal').classList.remove('hidden');
+window.closeCreate = () => document.getElementById('createModal').classList.add('hidden');
+window.renderProfile = () => {
+  document.getElementById('postCount').innerText = posts.length;
+  document.getElementById('profileGrid').innerHTML = posts.map(p=>`<img src="${p.image}" class="aspect-square object-cover">`).join('');
+};
+
+// REAL DM - REALTIME DATABASE
+window.sendMessage = () => {
+  const text = document.getElementById('msgInput').value;
+  if(!text) return;
+  push(rtdbRef(rtdb,'messages'),{ text, uid: currentUser.uid, time: Date.now() });
+  document.getElementById('msgInput').value='';
+};
+const msgRef = rtdbRef(rtdb,'messages');
+onChildAdded(msgRef,(snap)=>{
+  const m = snap.val();
+  document.getElementById('chatMessages').innerHTML += `<div class="${m.uid===currentUser?.uid?'ml-auto bg-blue-500 text-white':'bg-white border'} max-w-[70%] p-2 rounded-xl text-sm m-1">${m.text}</div>`;
+});
+
+// PAYSTACK ONLY - YEARLY BLUE TICK - PAY ONCE EVERY YEAR - REAL FIRESTORE SAVE
+window.buyBlueTick = () => {
+  const email = prompt('Email for Blue Tick Annual ₦52,500/year ($35/year) - Pay once every year:'); if(!email) return;
+  PaystackPop.setup({
+    key: PAYSTACK_KEY, email, amount:52500*100, currency:'NGN', ref:'BLUETICK_YEARLY_'+Date.now(),
+    callback: async function(res){
+      const exp = new Date(); exp.setFullYear(exp.getFullYear()+1);
+      localStorage.setItem('blueTick','true'); localStorage.setItem('blueTickExpiry',exp.toISOString());
+      // SAVE TO FIRESTORE USERS COLLECTION
+      await addDoc(collection(db,'users'),{ uid: currentUser.uid, email, blueTick:true, expiry: exp.toISOString(), ref: res.reference, plan:'yearly', amount:52500 });
+      alert(`✅ Blue Tick Yearly Paid! Ref ${res.reference}\nExpires ${exp.toDateString()}\nSaved to Firebase users collection`);
+      document.getElementById('blueTick').classList.remove('hidden');
+      checkBlueTickExpiry();
+    }
+  }).openIframe();
+};
+
+window.checkBlueTickExpiry = async () => {
+  const q = query(collection(db,'users'), where('uid','==', currentUser?.uid||''));
+  const snap = await getDocs(q);
+  snap.forEach(d=>{
+    const data = d.data(); const exp = new Date(data.expiry); const now = new Date();
+    const text = document.getElementById('blueTickExpiryText');
+    if(now > exp){ text.innerText='❌ Expired - Renew ₦52,500/year'; localStorage.setItem('blueTick','false'); document.getElementById('blueTick').classList.add('hidden'); }
+    else { const days=Math.ceil((exp-now)/86400000); text.innerText=`✔️ Verified • Expires in ${days} days • Yearly ₦52,500`; document.getElementById('blueTick').classList.remove('hidden'); }
+  });
+};
+
+window.openBoost = () => {
+  const amount = prompt('Boost amount: 1600, 4800, 8000');
+  const email = prompt('Email for Paystack:'); if(!email||!amount) return;
+  const views = amount==1600?500: amount==4800?2000:5000;
+  PaystackPop.setup({
+    key:PAYSTACK_KEY, email, amount: amount*100, currency:'NGN', ref:'BOOST_'+Date.now(),
+    callback: async function(res){
+      // Mark latest post as sponsored
+      if(posts[0]){ await updateDoc(doc(db,'posts',posts[0].id),{ sponsored:true }); }
+      await addDoc(collection(db,'boosts'),{ uid: currentUser.uid, amount, views, ref: res.reference, time: Date.now() });
+      alert(`✅ Boost ₦${amount} Paid! Ref ${res.reference} - Sponsored tag active - Funds in your Paystack balance`);
+    }
+  }).openIframe();
+};
+
+window.sharePost = (id) => window.open(`https://wa.me/?text=Check CONNECTI https://connecti.com/post/${id}`);
+
+</script>
+</body>
+</html>
