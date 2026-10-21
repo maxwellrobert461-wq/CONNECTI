@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CONNECTI - 100% Instagram Clone</title>
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiQ09OTkVDVEkiLCJzaG9ydF9uYW1lIjoiQ09OTkVDVEkiLCJzdGFydF91cmwiOiIvIiwiZGlzcGxheSI6InN0YW5kYWxvbmUiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiI2ZmZmZmZiIsInRoZW1lX2NvbG9yIjoiIzAwMDAwMCJ9">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Grand+Hotel&family=Roboto:wght@400;500;700&display=swap');
+*{font-family:'Roboto',sans-serif} .logo{font-family:'Grand Hotel',cursive}
+.no-scrollbar::-webkit-scrollbar{display:none} .no-scrollbar{scrollbar-width:none}
+.story-ring{background:linear-gradient(45deg,#feda75,#fa7e1e,#d62976,#962fbf,#4f5bd5);padding:2.5px}
+.close-ring{background:#1a1a1a;padding:2px} .close-ring-inner{background:#00FF00;padding:2.5px}
+</style>
+</head>
+<body class="bg-white text-black max-w-[500px] mx-auto border-x border-zinc-200 min-h-screen relative pb-[60px] select-none">
+
+<!-- HEADER -->
+<header class="sticky top-0 bg-white/95 backdrop-blur z-50 border-b border-zinc-200 flex justify-between items-center p-3">
+<h1 class="logo text-[28px] font-normal">CONNECTI</h1>
+<div class="flex gap-4 items-center">
+<button onclick="showTab('notifications')" class="relative text-[22px]">♡<span id="notifDot" class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span></button>
+<button onclick="showTab('dm')" class="relative text-[20px]">✈️<span class="text-[10px] bg-red-500 text-white rounded-full px-1 absolute -top-1 -right-2">3</span></button>
+</div>
+</header>
+
+<div id="expiryBanner" class="hidden bg-blue-500 text-white text-[11px] p-2 text-center"></div>
+
+<!-- STORIES -->
+<div id="storiesRow" class="flex gap-3 p-3 overflow-x-auto no-scrollbar border-b border-zinc-100">
+<div class="flex flex-col items-center min-w-[64px]" onclick="addStory()">
+<div class="w-[64px] h-[64px] rounded-full bg-zinc-100 flex items-center justify-center border border-zinc-300 relative">
+<img src="https://i.pravatar.cc/100?img=12" class="w-[60px] h-[60px] rounded-full object-cover">
+<div class="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[12px]">+</div>
+</div>
+<span class="text-[11px] mt-1">Your story</span>
+</div>
+<div class="flex flex-col items-center min-w-[64px]"><div class="story-ring rounded-full"><img src="https://i.pravatar.cc/100?img=15" class="w-[60px] h-[60px] rounded-full border-[3px] border-white object-cover"></div><span class="text-[11px] mt-1">oc_global</span></div>
+<div class="flex flex-col items-center min-w-[64px]"><div class="close-ring rounded-full"><div class="close-ring-inner rounded-full"><img src="https://i.pravatar.cc/100?img=20" class="w-[56px] h-[56px] rounded-full border-[3px] border-white"></div></div><span class="text-[11px] mt-1">close_friends</span></div>
+</div>
+
+<!-- HOME FEED -->
+<div id="homeTab"><div id="feed"></div><div class="p-3 border-y bg-zinc-50 text-[11px] text-center">AdMob Banner: ca-app-pub-4813832175831420 • Sponsored every 10th post ₦8,000/week via Paystack</div></div>
+
+<!-- REELS -->
+<div id="reelsTab" class="hidden h-[calc(100vh-110px)] bg-black text-white overflow-y-auto snap-y snap-mandatory"><div id="reelsFeed"></div></div>
+
+<!-- SEARCH -->
+<div id="searchTab" class="hidden p-2">
+<div class="bg-zinc-100 rounded-lg p-2.5 flex gap-2 items-center"><span class="text-zinc-400">🔍</span><input id="searchInput" oninput="searchUsers()" placeholder="Search users, hashtags, places, music" class="bg-transparent w-full outline-none text-sm"></div>
+<div id="searchResults" class="mt-3 text-sm"></div>
+<div class="mt-3 text-[11px] text-zinc-500">Explore • #portharcourt #ocglobaltech #supremebase #connecti #fyp</div>
+<div id="exploreGrid" class="grid grid-cols-3 gap-[2px] mt-3"></div>
+</div>
+
+<!-- DM -->
+<div id="dmTab" class="hidden">
+<div id="dmListHeader" class="p-3 border-b flex justify-between items-center"><h2 class="font-bold">golden_boy • Messages</h2><button onclick="toggleVanish()" id="vanishBtn" class="text-[11px] border px-3 py-1 rounded-full">Vanish Mode OFF</button></div>
+<div id="dmList"></div>
+<div id="chatBox" class="hidden flex flex-col h-[75vh]">
+<div class="p-3 border-b flex gap-2 items-center"><button onclick="closeChat()">←</button><img id="chatAvatar" src="https://i.pravatar.cc/40?img=15" class="w-8 h-8 rounded-full"><span id="chatName" class="font-bold text-sm"></span><span id="typingIndicator" class="text-[10px] text-zinc-400 ml-auto"></span></div>
+<div id="chatMessages" class="flex-1 overflow-y-auto p-3 space-y-2 bg-zinc-50"></div>
+<div class="p-2 flex gap-2 border-t items-center"><button onclick="sendLocation()" class="text-[18px]">📍</button><input id="msgInput" placeholder="Message..." class="flex-1 bg-zinc-100 rounded-full px-4 py-2.5 text-sm outline-none"><button onclick="sendMessage()" class="text-blue-500 font-bold text-sm">Send</button><button onclick="sendVoice()" class="text-[18px]">🎤</button></div>
+</div>
+</div>
+
+<!-- NOTIFICATIONS -->
+<div id="notificationsTab" class="hidden p-3"><h2 class="font-bold text-[18px]">Notifications</h2><div id="notifList" class="mt-4 space-y-3 text-sm"></div></div>
+
+<!-- PROFILE -->
+<div id="profileTab" class="hidden"><div class="p-4">
+<div class="flex gap-6 items-center">
+<img src="https://i.pravatar.cc/100?img=12" class="w-[84px] h-[84px] rounded-full">
+<div class="flex gap-7 text-center"><div><b id="postCount" class="text-[16px]">0</b><p class="text-[13px]">Posts</p></div><div><b id="followersCount" class="text-[16px]">1,248</b><p class="text-[13px]">Followers</p></div><div><b class="text-[16px]">340</b><p class="text-[13px]">Following</p></div></div>
+</div>
+<div class="mt-3"><h3 class="font-bold text-[15px] flex items-center gap-1"><span>Golden Boy</span><span id="blueTick" class="hidden text-blue-500 text-[14px]">✔️</span><span class="text-[10px] bg-zinc-100 px-1.5 py-0.5 rounded">Creator</span></h3><p class="text-[13px] leading-4 mt-1">OC GLOBAL TECH • Port Harcourt • Builder of SupremeBase<br>🔗 connecti.com<br><span id="bio">Building CONNECTI 🚀 Instagram clone 100% with Paystack only</span></p><p id="blueTickExpiryText" class="text-[11px] text-blue-600 mt-1 font-medium"></p></div>
+<div class="flex gap-2 mt-3"><button onclick="editProfile()" class="flex-1 bg-zinc-100 py-[7px] rounded-lg text-[13px] font-semibold">Edit profile</button><button onclick="shareProfile()" class="flex-1 bg-zinc-100 py-[7px] rounded-lg text-[13px] font-semibold">Share profile</button><button onclick="showTab('wallet')" class="bg-zinc-100 px-3 py-[7px] rounded-lg text-[13px]">💼</button></div>
+<div id="highlightsRow" class="flex gap-3 mt-4 overflow-x-auto no-scrollbar"></div>
+<div class="flex border-t border-zinc-200 mt-4"><button onclick="switchProfileTab('posts')" id="pTab-posts" class="flex-1 py-3 text-[12px] font-bold border-t border-black">⊞ POSTS</button><button onclick="switchProfileTab('reels')" id="pTab-reels" class="flex-1 py-3 text-[12px] text-zinc-400">▶ REELS</button><button onclick="switchProfileTab('tagged')" id="pTab-tagged" class="flex-1 py-3 text-[12px] text-zinc-400">👤 TAGGED</button></div>
+<div id="profileGrid" class="grid grid-cols-3 gap-[2px]"></div>
+<div class="mt-6 space-y-2.5">
+<button onclick="buyBlueTick()" class="w-full bg-[#0095F6] text-white py-3.5 rounded-xl font-bold text-[14px]">Get Blue Tick ✔️ ₦52,500/year ($35/year) - Paystack Annual</button>
+<p class="text-[11px] text-center text-zinc-500 -mt-1">Pay once every year • Expires after 12 months • Renew yearly • All to your Paystack balance</p>
+<button onclick="openBoost()" class="w-full border border-zinc-300 py-3.5 rounded-xl font-bold text-[14px]">🚀 Boost Post - From ₦1,600 - Paystack</button>
+<button onclick="openLive()" class="w-full bg-[#FF3040] text-white py-3.5 rounded-xl font-bold text-[14px]">🔴 Go Live - TikTok Style - Guest + Gifts</button>
+<button onclick="toggleTheme()" class="w-full bg-black text-white py-2.5 rounded-xl text-[12px]">Toggle Dark/Light</button>
+</div>
+</div></div>
+
+<!-- WALLET -->
+<div id="walletTab" class="hidden p-4">
+<h2 class="font-bold text-[18px]">Creator Earnings - Paystack Only</h2>
+<div class="bg-black text-white p-5 rounded-[20px] mt-4">
+<p class="text-[12px] text-zinc-400 leading-4">Your earnings — payment will be depend on how the page make money for the app in the month and the page get 30% of the profit and app get 70 percent — Keep posting! (Paystack Transfer payout)</p>
+<h1 class="text-[34px] font-black mt-4">₦<span id="walletBalance">0.00</span></h1>
+<p class="text-[11px] text-zinc-400 mt-2">Total Views: <span id="totalViews">0</span> • Until 1B users, earnings ₦0. After 1B, ₦15 per 1000 views • 30% you, 70% app</p>
+<div class="mt-5 flex gap-2 items-center"><button onclick="withdraw()" class="bg-white text-black px-5 py-2.5 rounded-full font-bold text-[13px]">Withdraw to Bank</button><span class="text-[10px] text-zinc-500">Paystack Transfer API</span></div>
+</div>
+<div class="mt-4 bg-zinc-100 p-3.5 rounded-xl text-[12px] leading-5"><b>Boost Packages - Paystack NGN - Instant:</b><br>₦1,600 ($1) = 500 views + 50 likes<br>₦4,800 ($3) = 2000 views + 300 likes + 30 followers ⭐ Popular<br>₦8,000 ($5) = 5000 views + 800 likes + 100 followers<br><br><b>Blue Tick Yearly:</b> ₦52,500/year ($35/year) - Pay once every year<br><br><b>Paystack Live:</b> pk_live_16a8e4130e54cdbd8eb5a693ae37a52d874e3ee0<br><b>Paystack Test:</b> pk_test_234282edd655fe3a25eb1f694013e3f0d29fd201<br>Funds go straight to your Paystack balance - No Flutterwave, No OPay</div>
+<button onclick="showTab('profile')" class="mt-4 w-full border border-zinc-300 py-2.5 rounded-xl text-[13px] font-semibold">Back to Profile</button>
+</div>
+
+<!-- BOOST MODAL -->
+<div id="boostModal" class="hidden fixed inset-0 bg-black/50 z-[100] flex items-end"><div class="bg-white w-full rounded-t-[20px] p-6 max-w-[500px] mx-auto">
+<h3 class="font-bold text-[16px]">Boost Post 🚀 - Paystack NGN</h3><p class="text-[12px] text-zinc-500 mt-1">Choose package - Boost starts immediately - Sponsored tag</p>
+<div class="mt-5 space-y-2.5">
+<button onclick="payBoost(1600,500,50,0)" class="w-full border border-zinc-200 p-3.5 rounded-xl text-left text-[14px]"><div class="flex justify-between"><b>₦1,600</b><span class="text-zinc-500">$1</span></div><span class="text-[12px] text-zinc-500">500 views + 50 likes</span></button>
+<button onclick="payBoost(4800,2000,300,30)" class="w-full border-2 border-[#D4AF37] p-3.5 rounded-xl text-left text-[14px] bg-[#D4AF37]/10"><div class="flex justify-between"><b>₦4,800 ⭐ Popular</b><span>$3</span></div><span class="text-[12px]">2000 views + 300 likes + 30 followers</span></button>
+<button onclick="payBoost(8000,5000,800,100)" class="w-full border border-zinc-200 p-3.5 rounded-xl text-left text-[14px]"><div class="flex justify-between"><b>₦8,000</b><span>$5</span></div><span class="text-[12px] text-zinc-500">5000 views + 800 likes + 100 followers</span></button>
+</div>
+<button onclick="document.getElementById('boostModal').classList.add('hidden')" class="w-full mt-5 text-[13px] text-zinc-500 py-2">Close</button>
+</div></div>
+
+<!-- CREATE POST MODAL -->
+<div id="createModal" class="hidden fixed inset-0 bg-white z-[90] flex flex-col">
+<div class="p-3 border-b flex justify-between items-center"><button onclick="closeCreate()" class="text-[15px]">Cancel</button><span class="font-bold text-[16px]">New Post</span><button onclick="publishPost()" class="text-[#0095F6] font-bold text-[15px]">Share</button></div>
+<div class="p-4 space-y-3">
+<input id="postImage" type="file" multiple accept="image/*,video/*" class="text-[13px] w-full border border-dashed border-zinc-300 p-4 rounded-xl">
+<textarea id="caption" placeholder="Write a caption... #hashtags @tag people + Add location + music" class="w-full border border-zinc-200 p-3 rounded-xl h-28 text-[14px] outline-none"></textarea>
+<input id="locationInput" placeholder="Add location • Tag people • Add music" class="w-full border border-zinc-200 p-3 rounded-xl text-[13px] outline-none">
+<div class="flex gap-4 text-[12px]"><label class="flex items-center gap-1"><input type="checkbox" id="archiveCheck"> Archive</label><label class="flex items-center gap-1"><input type="checkbox" id="commentsOff"> Turn off commenting</label></div>
+<p class="text-[11px] text-zinc-400">Supports: Single photo, Carousel 10, Video 90s, Location, Tag, Hashtag, Music</p>
+</div>
+</div>
+
+<!-- BOTTOM NAV - IG STYLE -->
+<nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-200 flex justify-around py-2.5 max-w-[500px] mx-auto z-50">
+<button onclick="showTab('home')" class="text-[22px]">⌂</button>
+<button onclick="showTab('search')" class="text-[18px]">🔍</button>
+<button onclick="openCreate()" class="w-7 h-7 border-2 border-black rounded-lg flex items-center justify-center text-[20px]">+</button>
+<button onclick="showTab('reels')" class="text-[18px]">▶</button>
+<button onclick="showTab('profile')" class="w-6 h-6 rounded-full overflow-hidden border"><img src="https://i.pravatar.cc/100?img=12" class="w-full h-full object-cover"></button>
+</nav>
+
+<script>
+const PAYSTACK_KEY = 'pk_live_16a8e4130e54cdbd8eb5a693ae37a52d874e3ee0';
+let posts = JSON.parse(localStorage.getItem('connecti_posts')||'[]');
+let stories = JSON.parse(localStorage.getItem('connecti_stories')||'[]');
+let currentUser = { name:'Golden Boy', avatar:'https://i.pravatar.cc/100?img=12', verified: localStorage.getItem('blueTick')==='true', followers:1248 };
+let vanish=false, currentChat=null, messages={}, totalViews=parseInt(localStorage.getItem('views')||'0');
+
+function showTab(t){
+  ['home','reels','search','dm','notifications','profile','wallet'].forEach(x=>{ const el=document.getElementById(x+'Tab'); if(el) el.classList.add('hidden'); });
+  document.getElementById('homeTab').classList.add('hidden');
+  if(t==='home') document.getElementById('homeTab').classList.remove('hidden'); else document.getElementById(t+'Tab').classList.remove('hidden');
+  if(t==='home') renderFeed(); if(t==='reels') renderReels(); if(t==='search') renderExplore(); if(t==='dm') renderDMList(); if(t==='notifications') renderNotifs(); if(t==='profile') renderProfile();
+}
+function switchProfileTab(type){
+  document.querySelectorAll('[id^="pTab-"]').forEach(b=>{b.classList.remove('border-t','border-black','font-bold','text-black'); b.classList.add('text-zinc-400');});
+  document.getElementById('pTab-'+type).classList.add('border-t','border-black','font-bold','text-black');
+  renderProfile(type);
+}
+
+function renderFeed(){
+  const feed=document.getElementById('feed'); let html='';
+  if(posts.length===0){
+    posts=[
+      {id:1,user:'oc_global_tech',avatar:'https://i.pravatar.cc/100?img=15',images:['https://picsum.photos/500/500?11'],caption:'Welcome to CONNECTI 🚀 100% Instagram Clone • Paystack Only • Yearly Blue Tick ₦52,500 • Boost from ₦1,600 #OCGlobalTech #PortHarcourt #SupremeBase',likes:534,comments:[{user:'fan',text:'Fire! 🔥'}],location:'Port Harcourt',time:'2h',sponsored:false},
+      {id:2,user:'golden_boy',avatar:'https://i.pravatar.cc/100?img=12',images:['https://picsum.photos/500/600?12','https://picsum.photos/500/600?13'],caption:'My first carousel 🔥 2 photos • Boost available via Paystack • Sponsored tag • #connecti #fyp',likes:320,comments:[],location:'PH',time:'5h',sponsored:true}
+    ];
+  }
+  posts.forEach((p,i)=>{
+    if(i>0 && i%10===0) html+=`<div class="p-3 border-y border-zinc-100 bg-[#FFFBEB] text-[11px] flex justify-between items-center"><span>📢 Sponsored Ad - ₦8,000/week - ca-app-pub-4813832175831420</span><button class="bg-black text-white px-3 py-1 rounded-full text-[10px]">Learn More</button></div>`;
+    html+=`<div class="border-b border-zinc-100 pb-2 ${p.sponsored?'bg-zinc-50/50':''}">
+      <div class="flex justify-between items-center p-3"><div class="flex gap-2.5 items-center"><img src="${p.avatar}" class="w-8 h-8 rounded-full"><div><p class="text-[14px] font-semibold flex items-center gap-1">${p.user} ${currentUser.verified?'<span class="text-blue-500 text-[12px]">✔️</span>':''}</p><p class="text-[11px] text-zinc-500">${p.location||''}</p></div></div><button onclick="postMenu(${p.id})" class="font-bold">•••</button></div>
+      <div class="relative bg-black aspect-square overflow-hidden"><img src="${p.images[0]}" class="w-full h-full object-cover">${p.images.length>1?`<span class="absolute top-3 right-3 bg-black/60 text-white text-[11px] px-2 py-0.5 rounded-full">1/${p.images.length}</span>`:''}${p.sponsored?`<span class="absolute top-2 left-2 bg-[#D4AF37] text-black text-[10px] px-2.5 py-1 rounded-full font-bold">Sponsored • Boosted via Paystack</span>`:''}</div>
+      <div class="p-3 flex justify-between"><div class="flex gap-4 text-[22px]"><button onclick="likePost(${p.id})">${p.liked?'❤️':'♡'}</button><button onclick="commentPost(${p.id})">💬</button><button onclick="sharePost(${p.id})">✈️</button></div><button onclick="savePost(${p.id})">🔖</button></div>
+      <div class="px-3 text-[14px]"><b>${p.likes} likes</b><p class="mt-1 leading-4"><b>${p.user}</b> ${p.caption}</p><p class="text-zinc-500 text-[12px] mt-1">View all ${p.comments.length} comments • ${p.time} ago • ${p.sponsored?'Sponsored':''}</p></div>
+    </div>`;
+  }); feed.innerHTML=html;
+}
+function renderReels(){
+  const el=document.getElementById('reelsFeed'); let html='';
+  for(let i=0;i<4;i++){ html+=`<div class="h-[85vh] snap-start relative bg-zinc-900 flex items-center justify-center border-b border-zinc-800">
+    <video src="https://www.w3schools.com/html/mov_bbb.mp4" class="w-full h-full object-cover" loop muted autoplay playsinline></video>
+    <div class="absolute bottom-24 left-3 text-white max-w-[70%]"><p class="font-bold text-[14px]">@creator${i} ✔️</p><p class="text-[13px] mt-1">Reel ${i+1} • Music: Original Audio • Filters, Text, Stickers, Speed, Timer, Remix/Duet #fyp #connecti</p></div>
+    <div class="absolute right-3 bottom-24 flex flex-col gap-6 text-white items-center"><button class="flex flex-col items-center">❤️<span class="text-[12px]">1.2k</span></button><button class="flex flex-col items-center">💬<span class="text-[12px]">45</span></button><button>✈️</button><button>•••</button><div class="w-8 h-8 rounded-lg border-2 border-white bg-zinc-700"></div></div>
+  </div>`; } el.innerHTML=html;
+}
+function renderExplore(){
+  const grid=document.getElementById('exploreGrid'); grid.innerHTML=Array(18).fill(0).map((_,i)=>`<img src="https://picsum.photos/200/200?${i+10}" class="w-full aspect-square object-cover">`).join('');
+  document.getElementById('searchResults').innerHTML=`<div class="text-[12px] text-zinc-500">Recent: portharcourt • ocglobaltech • supremebase • connecti • fyp</div>`;
+}
+function searchUsers(){ const q=document.getElementById('searchInput').value; document.getElementById('searchResults').innerHTML=q?`<div class="flex gap-2 items-center p-2.5 border-b"><img src="https://i.pravatar.cc/40?img=20" class="w-8 h-8 rounded-full"><div><p class="text-[13px] font-semibold">${q}_official ✔️</p><p class="text-[11px] text-zinc-500">${q} • 12k followers</p></div></div>`:''; }
+
+function renderDMList(){
+  document.getElementById('dmList').innerHTML=`
+  <div class="p-3 flex gap-3 border-b" onclick="openChat('oc_global_tech')"><img src="https://i.pravatar.cc/40?img=15" class="w-14 h-14 rounded-full"><div class="flex-1"><p class="text-[14px] font-semibold">oc_global_tech ✔️</p><p class="text-[13px] text-zinc-500">Seen • Typing... • Vanish mode, voice note, location supported</p></div><span class="text-[11px] text-zinc-400">2h</span></div>
+  <div class="p-3 flex gap-3 border-b" onclick="openChat('golden_boy')"><img src="https://i.pravatar.cc/40?img=12" class="w-14 h-14 rounded-full"><div><p class="text-[14px] font-semibold">golden_boy</p><p class="text-[13px] text-zinc-500">You: CONNECTI 100% with Paystack only! 🚀</p></div></div>
+  <div class="p-3 text-[11px] text-zinc-500">Group chat • Vanish mode disappearing • Voice notes 0:12 • Location share • Reactions ❤️ • Read receipts ✔️✔️ • Typing indicator</div>`;
+}
+function openChat(name){ currentChat=name; document.getElementById('dmList').classList.add('hidden'); document.getElementById('dmListHeader').classList.add('hidden'); document.getElementById('chatBox').classList.remove('hidden'); document.getElementById('chatName').innerText=name; document.getElementById('typingIndicator').innerText='typing...'; setTimeout(()=>document.getElementById('typingIndicator').innerText='',1500); renderChat(); }
+function closeChat(){ document.getElementById('chatBox').classList.add('hidden'); document.getElementById('dmList').classList.remove('hidden'); document.getElementById('dmListHeader').classList.remove('hidden'); }
+function renderChat(){ const box=document.getElementById('chatMessages'); const msgs=messages[currentChat]||[]; box.innerHTML=msgs.map(m=>`<div class="${m.me?'ml-auto bg-[#0095F6] text-white':'bg-white border'} max-w-[70%] p-2.5 rounded-[18px] text-[14px]">${m.text} <span class="text-[9px] opacity-60 ml-1">${m.time} ${m.me?'✔️✔️':''}</span></div>`).join(''); box.scrollTop=box.scrollHeight; }
+function sendMessage(){ const input=document.getElementById('msgInput'); if(!input.value) return; if(!messages[currentChat]) messages[currentChat]=[]; messages[currentChat].push({text:input.value,me:true,time:'now'}); if(vanish) setTimeout(()=>{ messages[currentChat]=messages[currentChat].slice(0,-1); renderChat(); },5000); input.value=''; renderChat(); totalViews+=5; localStorage.setItem('views',totalViews); }
+function sendVoice(){ if(!messages[currentChat]) messages[currentChat]=[]; messages[currentChat].push({text:'🎤 Voice note 0:12 ▶️',me:true,time:'now'}); renderChat(); }
+function sendLocation(){ if(!messages[currentChat]) messages[currentChat]=[]; messages[currentChat].push({text:'📍 Location: Port Harcourt, Rivers - https://maps.google.com/?q=4.8156,7.0498',me:true,time:'now'}); renderChat(); }
+function toggleVanish(){ vanish=!vanish; document.getElementById('vanishBtn').innerText=vanish?'Vanish Mode ON - Messages disappear in 5s':'Vanish Mode OFF'; document.getElementById('vanishBtn').className=vanish?'text-[11px] border px-3 py-1 rounded-full bg-black text-white':'text-[11px] border px-3 py-1 rounded-full'; }
+
+function renderNotifs(){ document.getElementById('notifList').innerHTML=`<div class="flex gap-3 items-center"><img src="https://i.pravatar.cc/40?img=10" class="w-10 h-10 rounded-full"><p class="text-[13px]"><b>user123</b> liked your post. <span class="text-zinc-500">2h</span></p><img src="https://picsum.photos/40/40?1" class="w-10 h-10 ml-auto"></div><div class="flex gap-3 items-center"><img src="https://i.pravatar.cc/40?img=11" class="w-10 h-10 rounded-full"><p class="text-[13px]"><b>oc_global</b> started following you. <span class="text-zinc-500">5h</span></p><button class="ml-auto bg-[#0095F6] text-white px-4 py-1 rounded-lg text-[12px] font-semibold">Follow</button></div><div class="flex gap-3 items-center bg-blue-50 p-2 rounded-lg"><span class="text-blue-500">✔️</span><p class="text-[13px]"><b>Blue Tick Yearly</b> ₦52,500/year via Paystack - Pay once every year - Expires after 12 months</p></div>`; }
+
+function renderProfile(tab='posts'){
+  document.getElementById('postCount').innerText=posts.length; document.getElementById('followersCount').innerText=currentUser.followers; document.getElementById('blueTick').classList.toggle('hidden',!currentUser.verified);
+  const grid=document.getElementById('profileGrid');
+  if(tab==='posts') grid.innerHTML=posts.map(p=>`<div class="relative"><img src="${p.images[0]}" class="aspect-square object-cover w-full"><span class="absolute top-1 right-1 text-white text-[14px]">${p.images.length>1?'⊞':''}</span></div>`).join('');
+  if(tab==='reels') grid.innerHTML=`<div class="col-span-3 text-center py-12 text-[13px] text-zinc-500"><p class="text-[24px]">▶</p>Reels Tab<br>5 Reels • Filters, Music, Text, Stickers, Speed, Timer, Align, Remix/Duet<br>Music upload • Original audio</div>`;
+  if(tab==='tagged') grid.innerHTML=`<div class="col-span-3 text-center py-12 text-[13px] text-zinc-500">Tagged photos appear here<br>When people tag you, photos show here</div>`;
+  const hRow=document.getElementById('highlightsRow'); hRow.innerHTML=stories.map(s=>`<div class="flex flex-col items-center min-w-[64px]"><img src="${s.img}" class="w-14 h-14 rounded-full border border-zinc-200 object-cover"><span class="text-[11px] mt-1">${s.title}</span></div>`).join('')+`<div class="flex flex-col items-center min-w-[64px]" onclick="addHighlight()"><div class="w-14 h-14 rounded-full border border-zinc-300 flex items-center justify-center text-[20px]">+</div><span class="text-[11px] mt-1">New</span></div>`;
+  document.getElementById('totalViews').innerText=totalViews; document.getElementById('walletBalance').innerText= totalViews>1000000000 ? (totalViews/1000*15).toFixed(2) : '0.00';
+  checkBlueTickExpiry();
+}
+
+function openCreate(){ document.getElementById('createModal').classList.remove('hidden'); }
+function closeCreate(){ document.getElementById('createModal').classList.add('hidden'); }
+function publishPost(){
+  const file=document.getElementById('postImage').files[0];
+  const caption=document.getElementById('caption').value || 'New post on CONNECTI 🚀 #connecti';
+  const url=file?URL.createObjectURL(file):`https://picsum.photos/500/500?${Date.now()}`;
+  posts.unshift({id:Date.now(),user:'golden_boy',avatar:'https://i.pravatar.cc/100?img=12',images:[url],caption,likes:0,comments:[],location:document.getElementById('locationInput').value,time:'now',sponsored:false,archived:document.getElementById('archiveCheck').checked});
+  localStorage.setItem('connecti_posts',JSON.stringify(posts));
+  closeCreate(); showTab('home'); renderFeed();
+}
+function likePost(id){ const p=posts.find(x=>x.id===id); p.liked=!p.liked; p.likes+=p.liked?1:-1; renderFeed(); totalViews++; localStorage.setItem('views',totalViews); }
+function savePost(){ alert('Saved to Collections 🔖 - Save Collections feature'); }
+function sharePost(id){ if(navigator.share){ navigator.share({title:'CONNECTI Post',text:posts.find(x=>x.id===id)?.caption||'Check CONNECTI',url:'https://connecti.com'}); } else window.open('https://wa.me/?text=Check this post on CONNECTI https://connecti.com'); }
+function commentPost(id){ const c=prompt('Add comment - Hashtags @tag allowed'); if(c){ posts.find(x=>x.id===id).comments.push({user:'you',text:c}); renderFeed(); } }
+function postMenu(id){ const action=prompt('Options: 1=Edit, 2=Delete, 3=Archive, 4=Turn off comments, 5=Report\nEnter number:'); if(action==='2' && confirm('Delete post?')){ posts=posts.filter(x=>x.id!==id); localStorage.setItem('connecti_posts',JSON.stringify(posts)); renderFeed(); renderProfile(); } }
+function addStory(){ const url=prompt('Story image URL (or leave empty for demo):'); const img=url||`https://picsum.photos/100/100?${Date.now()}`; stories.push({img,title:'New'}); localStorage.setItem('connecti_stories',JSON.stringify(stories)); const row=document.getElementById('storiesRow'); row.innerHTML+=`<div class="flex flex-col items-center min-w-[64px]"><div class="story-ring rounded-full"><img src="${img}" class="w-[60px] h-[60px] rounded-full border-[3px] border-white object-cover"></div><span class="text-[11px] mt-1">New</span></div>`; }
+function addHighlight(){ const t=prompt('Highlight title:'); stories.push({img:`https://picsum.photos/100/100?${Date.now()}`,title:t||'Highlight'}); localStorage.setItem('connecti_stories',JSON.stringify(stories)); renderProfile(); }
+
+// 100% PAYSTACK ONLY - YEARLY BLUE TICK - PAY ONCE EVERY YEAR
+function buyBlueTick(){
+  const email=prompt('Enter email for Blue Tick Annual Subscription\n₦52,500/year ($35/year)\nPay once every year - Expires after 12 months:'); if(!email) return;
+  const expiry=localStorage.getItem('blueTickExpiry');
+  if(expiry && new Date(expiry) > new Date()){
+    const days=Math.ceil((new Date(expiry)-new Date())/86400000);
+    if(!confirm(`Already Verified ✔️\nExpires in ${days} days (${new Date(expiry).toDateString()})\nRenew early for another year?`)) return;
+  }
+  PaystackPop.setup({
+    key:PAYSTACK_KEY, email, amount:52500*100, currency:'NGN', ref:'BLUETICK_YEARLY_'+Date.now(),
+    metadata:{custom_fields:[{display_name:"Blue Tick Yearly", variable_name:"type", value:"$35/year - Pay once every year"}]},
+    callback:function(res){
+      const now=new Date(); const exp=new Date(now.setFullYear(now.getFullYear()+1));
+      localStorage.setItem('blueTick','true'); localStorage.setItem('blueTickExpiry',exp.toISOString()); localStorage.setItem('blueTickRef',res.reference);
+      alert(`✅ BLUE TICK YEARLY PAID!\nRef: ${res.reference}\n\n✔️ Verified for 1 YEAR\nExpires: ${exp.toDateString()}\nAmount: ₦52,500 ($35)\nPayment: Paystack Live pk_live_16a8e4130e54cdbd8eb5a693ae37a52d874e3ee0\nFunds in your Paystack balance\n\nYou must pay ₦52,500 again after 1 year to renew.`);
+      currentUser.verified=true; document.getElementById('blueTick').classList.remove('hidden'); renderProfile(); checkBlueTickExpiry();
+    },
+    onClose:function(){}
+  }).openIframe();
+}
+function checkBlueTickExpiry(){
+  const expiry=localStorage.getItem('blueTickExpiry'); const verified=localStorage.getItem('blueTick')==='true';
+  const banner=document.getElementById('expiryBanner'); const text=document.getElementById('blueTickExpiryText');
+  if(!expiry||!verified){ if(text) text.innerText='Not verified • Get Blue Tick ₦52,500/year'; return; }
+  const expDate=new Date(expiry); const now=new Date();
+  if(now>expDate){
+    localStorage.setItem('blueTick','false'); currentUser.verified=false;
+    if(text) text.innerText='❌ Expired • Renew ₦52,500/year';
+    banner.classList.remove('hidden'); banner.innerText='⚠️ Blue Tick expired! Renew now for ₦52,500/year ($35/year) - Pay once every year';
+    document.getElementById('blueTick').classList.add('hidden');
+  }else{
+    const days=Math.ceil((expDate-now)/86400000);
+    if(text) text.innerText=`✔️ Verified • Expires in ${days} days • ${expDate.toDateString()} • Yearly ₦52,500`;
+    if(days<=30){
+      banner.classList.remove('hidden');
+      banner.innerHTML=`Your Blue Tick expires in ${days} days • <button onclick="buyBlueTick()" class="underline font-bold">Renew ₦52,500/year</button>`;
+      if(text) text.innerHTML+=` • <button onclick="buyBlueTick()" class="underline font-bold">Renew</button>`;
+    }else banner.classList.add('hidden');
+  }
+}
+function openBoost(){ document.getElementById('boostModal').classList.remove('hidden'); }
+function payBoost(amount, views, likes, followers){
+  const email=prompt(`Enter email to pay ₦${amount} via Paystack Only\n${views} views + ${likes} likes + ${followers} followers\nSponsored tag instant:`); if(!email) return;
+  PaystackPop.setup({
+    key:PAYSTACK_KEY, email, amount:amount*100, currency:'NGN', ref:'BOOST_'+Date.now(), metadata:{views,likes,followers},
+    callback:function(res){
+      alert(`✅ BOOST PAID ₦${amount}!\nRef: ${res.reference}\n${views} views + ${likes} likes + ${followers} followers added\nSponsored tag active\nFunds in your Paystack balance\nPaystack Live: pk_live_16a8e4130e54cdbd8eb5a693ae37a52d874e3ee0`);
+      posts[0].sponsored=true; posts[0].likes+=likes; totalViews+=views; currentUser.followers+=followers; localStorage.setItem('views',totalViews); renderFeed(); renderProfile(); document.getElementById('boostModal').classList.add('hidden');
+    }
+  }).openIframe();
+}
+function withdraw(){
+  const amount=document.getElementById('walletBalance').innerText;
+  if(amount=='0.00') return alert('Earnings ₦0 until 1B users reached.\nAfter 1B: ₦15 per 1000 views, 30% to you via Paystack Transfer, 70% to app.\nKeep posting!\n\nPayout via Paystack Transfer API - No Flutterwave, No OPay');
+  const bank=prompt('Enter bank account number + bank name for Paystack Transfer payout (e.g., 1234567890 - Access Bank):'); if(bank) alert(`Withdrawal request ₦${amount} to ${bank} submitted!\nWill be paid via Paystack Transfer API (Paystack only)\nFunds from your Paystack balance.`);
+}
+function editProfile(){ const b=prompt('New bio:',document.getElementById('bio')?.innerText||''); if(b) document.getElementById('bio').innerText=b; }
+function shareProfile(){ window.open('https://wa.me/?text=Follow me on CONNECTI - 100% Instagram Clone with Paystack Only - https://connecti.com/golden_boy'); }
+function openLive(){ document.body.innerHTML+=`<div class="fixed inset-0 bg-black z-[200] flex flex-col"><div class="p-3 text-white flex justify-between items-center"><span>🔴 LIVE • 1.2k viewers • TikTok Style</span><button onclick="location.reload()" class="bg-[#FF3040] px-4 py-1.5 rounded-full text-[12px] font-bold">End Live</button></div><div class="flex-1 flex flex-col items-center justify-center text-white text-center p-4"><p class="text-[28px]">🔴</p><p class="mt-2">Live Camera Preview</p><p class="text-[12px] text-zinc-400 mt-1">Features: Invite Guest, Filters, Beauty, Gifts, Comments, Music</p><div class="mt-6 flex gap-3"><button class="bg-zinc-800 px-4 py-2 rounded-full text-[12px]">Invite Guest</button><button class="bg-zinc-800 px-4 py-2 rounded-full text-[12px]">Filters</button><button class="bg-zinc-800 px-4 py-2 rounded-full text-[12px]">Gifts 🎁</button></div></div><div class="p-3 bg-zinc-900 text-white text-[12px] space-y-1"><p>💬 @user1: Fire 🔥🔥</p><p>💬 @fan: Love CONNECTI!</p><p>🎁 @oc_global sent a gift 🎁</p></div></div>`; }
+function toggleTheme(){ document.body.classList.toggle('bg-black'); document.body.classList.toggle('text-white'); document.body.classList.toggle('bg-white'); document.body.classList.toggle('text-black'); }
+
+renderFeed(); renderProfile(); checkBlueTickExpiry();
+</script>
+</body>
+</html>
